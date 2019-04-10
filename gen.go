@@ -374,6 +374,23 @@ func params(mappersConfig *config) (interface{}, error) {
 							fieldMappingRuleMap[dstFieldName] = fieldMappingRule
 						}
 					}
+				} else {
+					var fieldMappingRule struct {
+						DstFieldName string
+						SrcAlias     string
+						SrcShortPath string
+						SrcFieldName string
+						SrcFieldPtr  bool
+						CastStr      string
+						Casted       bool
+					}
+					fieldMappingRule.DstFieldName = dstFieldName
+					fieldMappingRule.SrcAlias = srcStruct.Alias
+					fieldMappingRule.SrcShortPath = srcStruct.ShortPath
+					fieldMappingRule.SrcFieldName = ""
+					fieldMappingRule.SrcFieldPtr = false
+					fieldMappingRule.CastStr, fieldMappingRule.Casted = srcCastRow, true
+					fieldMappingRuleMap[dstFieldName] = fieldMappingRule
 				}
 			}
 		}
