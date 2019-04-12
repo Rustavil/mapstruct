@@ -12,7 +12,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
@@ -21,6 +20,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -38,7 +39,7 @@ package {{ .PackageName }}
 
 import (
 {{- range .ImportPackages }}
-	{{ .Alias }} "{{ .PackagePath }}"
+	{{if .Alias}}{{ .Alias }} {{end}}"{{ .Path }}"
 {{- end }}
 )
 {{- range .TypeToPtrList }}
@@ -180,9 +181,10 @@ func (mc mapperConfig) ListMapperName() string {
 
 type config struct {
 	path    string
-	Out     string         `yaml:"out"`
-	Trace   bool           `yaml:"trace"`
-	Mappers []mapperConfig `yaml:"mappers"`
+	Out     string          `yaml:"out"`
+	Trace   bool            `yaml:"trace"`
+	Imports []importPackage `yaml:"imports"`
+	Mappers []mapperConfig  `yaml:"mappers"`
 }
 
 func main() {
@@ -259,8 +261,8 @@ type mappingParams struct {
 }
 
 type importPackage struct {
-	Alias       string
-	PackagePath string
+	Alias string
+	Path  string
 }
 
 func params(mappersConfig *config) (interface{}, error) {
@@ -420,8 +422,14 @@ func params(mappersConfig *config) (interface{}, error) {
 	importPackages := make([]importPackage, 0, len(importPackageAliasMap))
 	for alias, packagePath := range importPackageAliasMap {
 		importPackages = append(importPackages, importPackage{
-			Alias:       alias,
-			PackagePath: packagePath,
+			Alias: alias,
+			Path:  packagePath,
+		})
+	}
+	for i := range mappersConfig.Imports {
+		importPackages = append(importPackages, importPackage{
+			Alias: mappersConfig.Imports[i].Alias,
+			Path:  mappersConfig.Imports[i].Path,
 		})
 	}
 	return struct {
