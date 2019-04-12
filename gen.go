@@ -8,6 +8,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -25,8 +26,7 @@ import (
 )
 
 const (
-	defaultConfigPath = "mappers.yml"
-	defaultOutFile    = "mappers.go"
+	defaultOutFile = "mappers.go"
 )
 
 const (
@@ -181,24 +181,19 @@ func (mc mapperConfig) ListMapperName() string {
 
 type config struct {
 	path    string
-	Out     string          `yaml:"out"`
-	Trace   bool            `yaml:"trace"`
+	out     string
 	Imports []importPackage `yaml:"imports"`
 	Mappers []mapperConfig  `yaml:"mappers"`
 }
 
 func main() {
-	var configPath string
-	if len(configPath) == 0 {
-		configPath = defaultConfigPath
-	}
-	mappersConfig := loadConfig(configPath)
-	outFile := mappersConfig.Out
-	if len(outFile) == 0 {
-		outFile = defaultOutFile
-	}
-	err := os.MkdirAll(filepath.Dir(outFile), os.ModePerm)
-	f, err := os.Create(outFile)
+	configPath := flag.String("c", "mappers.yml", "Config file path")
+	outPath := flag.String("o", "mappers_gen.go", "Out file path")
+	flag.Parse()
+	mappersConfig := loadConfig(*configPath)
+	mappersConfig.out = *outPath
+	err := os.MkdirAll(filepath.Dir(*outPath), os.ModePerm)
+	f, err := os.Create(*outPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -227,7 +222,6 @@ func loadConfig(path string) *config {
 	if err != nil {
 		log.Fatal("Mapping configuration file format error:", err.Error())
 	}
-	mappersConfig.Out, err = filepath.Abs(mappersConfig.Out)
 	if err != nil {
 		log.Fatal("Generated mappers file error")
 	}
@@ -266,7 +260,7 @@ type importPackage struct {
 }
 
 func params(mappersConfig *config) (interface{}, error) {
-	packageName := mapperFilePackage(mappersConfig.Out)
+	packageName := mapperFilePackage(mappersConfig.out)
 	mappers := make([]mappingParams, 0, len(mappersConfig.Mappers)*2)
 	for _, mapperConfig := range mappersConfig.Mappers {
 
@@ -623,7 +617,11 @@ func parseRelation(relation string) (dstAlias, dstField, srcCastRow string) {
 }
 
 func mapperFilePackage(mapperFilePath string) string {
-	return filepath.Base(filepath.Dir(mapperFilePath))
+	absPath, err := filepath.Abs(mapperFilePath)
+	if err != nil {
+		panic(err)
+	}
+	return filepath.Base(filepath.Dir(absPath))
 }
 
 func parseStructure(path string) (*structMeta, error) {
