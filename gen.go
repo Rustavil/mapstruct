@@ -468,6 +468,9 @@ func castDstField(srcAlias string, srcField struct {
 	dstType := dstField.TypeStr
 	srcType := srcField.TypeStr
 	srcRow := fmt.Sprintf("%s.%s", srcAlias, srcField.Name)
+	if dstType == srcType {
+		return srcRow, true
+	}
 	if dstType != srcType {
 		if "*"+dstType == srcType {
 			srcRow = "*" + srcRow
