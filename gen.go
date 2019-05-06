@@ -347,48 +347,33 @@ func params(mappersConfig *config) (interface{}, error) {
 		}
 
 		for _, relation := range mapperConfig.Relations {
+			var fieldMappingRule struct {
+				DstFieldName string
+				SrcAlias     string
+				SrcShortPath string
+				SrcFieldName string
+				SrcFieldPtr  bool
+				CastStr      string
+				Casted       bool
+			}
+
 			_, dstFieldName, srcCastRow := parseRelation(relation)
-			for _, srcStruct := range srcList {
-				if strings.Contains(srcCastRow, srcStruct.Alias) {
-					for _, srcField := range srcStruct.Fields {
-						if strings.Contains(srcCastRow, fmt.Sprintf("%s.%s", srcStruct.Alias, srcField.Name)) {
-							var fieldMappingRule struct {
-								DstFieldName string
-								SrcAlias     string
-								SrcShortPath string
-								SrcFieldName string
-								SrcFieldPtr  bool
-								CastStr      string
-								Casted       bool
-							}
-							fieldMappingRule.DstFieldName = dstFieldName
-							fieldMappingRule.SrcAlias = srcStruct.Alias
-							fieldMappingRule.SrcShortPath = srcStruct.ShortPath
-							fieldMappingRule.SrcFieldName = srcField.Name
-							fieldMappingRule.SrcFieldPtr = srcField.Ptr
-							fieldMappingRule.CastStr, fieldMappingRule.Casted = srcCastRow, true
-							fieldMappingRuleMap[dstFieldName] = fieldMappingRule
-						}
-					}
-				} else {
-					var fieldMappingRule struct {
-						DstFieldName string
-						SrcAlias     string
-						SrcShortPath string
-						SrcFieldName string
-						SrcFieldPtr  bool
-						CastStr      string
-						Casted       bool
-					}
-					fieldMappingRule.DstFieldName = dstFieldName
-					fieldMappingRule.SrcAlias = srcStruct.Alias
-					fieldMappingRule.SrcShortPath = srcStruct.ShortPath
-					fieldMappingRule.SrcFieldName = ""
-					fieldMappingRule.SrcFieldPtr = false
-					fieldMappingRule.CastStr, fieldMappingRule.Casted = srcCastRow, true
-					fieldMappingRuleMap[dstFieldName] = fieldMappingRule
+
+			fieldMappingRule.DstFieldName = dstFieldName
+			fieldMappingRule.CastStr, fieldMappingRule.Casted = srcCastRow, true
+
+			usedSrc := searchUsedSrc(srcList, srcCastRow)
+			if usedSrc != nil {
+				usedField := searchUsedField(usedSrc, srcCastRow)
+				if usedField != nil {
+					fieldMappingRule.SrcAlias = usedSrc.Alias
+					fieldMappingRule.SrcShortPath = usedSrc.ShortPath
+					fieldMappingRule.SrcFieldName = usedField.Name
+					fieldMappingRule.SrcFieldPtr = usedField.Ptr
 				}
 			}
+
+			fieldMappingRuleMap[dstFieldName] = fieldMappingRule
 		}
 
 		var fieldMappingRules []struct {
@@ -446,6 +431,28 @@ func params(mappersConfig *config) (interface{}, error) {
 		TypesCastList:  typesCastList,
 		Mappers:        mappers,
 	}, nil
+}
+
+func searchUsedField(srcStruct *src, castRow string) *struct {
+	Name    string
+	Ptr     bool
+	TypeStr string
+} {
+	for _, srcField := range srcStruct.Fields {
+		if strings.Contains(castRow, fmt.Sprintf("%s.%s", srcStruct.Alias, srcField.Name)) {
+			return &srcField
+		}
+	}
+	return nil
+}
+
+func searchUsedSrc(srcList []src, srcCastRow string) *src {
+	for _, srcStruct := range srcList {
+		if strings.Contains(srcCastRow, srcStruct.Alias) {
+			return &srcStruct
+		}
+	}
+	return nil
 }
 
 func shortPath(meta *structMeta) string {
