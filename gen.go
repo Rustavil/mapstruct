@@ -439,7 +439,7 @@ func searchUsedField(srcStruct *src, castRow string) *struct {
 	TypeStr string
 } {
 	for _, srcField := range srcStruct.Fields {
-		if strings.Contains(castRow, fmt.Sprintf("%s.%s", srcStruct.Alias, srcField.Name)) {
+		if castRow == fmt.Sprintf("%s.%s", srcStruct.Alias, srcField.Name) {
 			return &srcField
 		}
 	}
