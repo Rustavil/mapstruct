@@ -231,11 +231,13 @@ func loadConfig(path string) *config {
 type src struct {
 	Alias     string
 	ShortPath string
-	Fields    []struct {
-		Name    string
-		Ptr     bool
-		TypeStr string
-	}
+	Fields    []field
+}
+
+type field struct {
+	Name    string
+	Ptr     bool
+	TypeStr string
 }
 
 type mappingParams struct {
@@ -289,11 +291,7 @@ func params(mappersConfig *config) (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			var fields []struct {
-				Name    string
-				Ptr     bool
-				TypeStr string
-			}
+			var fields []field
 			for _, f := range srcMeta.fields {
 				fields = append(fields, struct {
 					Name    string
@@ -433,13 +431,14 @@ func params(mappersConfig *config) (interface{}, error) {
 	}, nil
 }
 
-func searchUsedField(srcStruct *src, castRow string) *struct {
-	Name    string
-	Ptr     bool
-	TypeStr string
-} {
+func searchUsedField(srcStruct *src, castRow string) *field {
 	for _, srcField := range srcStruct.Fields {
 		if castRow == fmt.Sprintf("%s.%s", srcStruct.Alias, srcField.Name) {
+			return &srcField
+		}
+	}
+	for _, srcField := range srcStruct.Fields {
+		if strings.Contains(castRow, fmt.Sprintf("%s.%s", srcStruct.Alias, srcField.Name)) {
 			return &srcField
 		}
 	}
