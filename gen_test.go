@@ -150,6 +150,33 @@ func Test_searchUsedField(t *testing.T) {
 				TypeStr: "int",
 			},
 		},
+		{
+			name: "Search by expression",
+			args: args{
+				srcStruct: &src{
+					Alias: "src",
+					Fields: []field{
+						{
+							Name:    "Field",
+							Ptr:     true,
+							TypeStr: "int",
+						},
+						{
+							Name:    "Fields",
+							Ptr:     true,
+							TypeStr: "int",
+						},
+					},
+					ShortPath: "",
+				},
+				castRow: "int64(src.Fields)",
+			},
+			want: &field{
+				Name:    "Fields",
+				Ptr:     true,
+				TypeStr: "int",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

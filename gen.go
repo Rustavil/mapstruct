@@ -437,12 +437,15 @@ func searchUsedField(srcStruct *src, castRow string) *field {
 			return &srcField
 		}
 	}
+	var res *field
 	for _, srcField := range srcStruct.Fields {
 		if strings.Contains(castRow, fmt.Sprintf("%s.%s", srcStruct.Alias, srcField.Name)) {
-			return &srcField
+			if res == nil || len(res.Name) < len(srcField.Name) {
+				res = &srcField
+			}
 		}
 	}
-	return nil
+	return res
 }
 
 func searchUsedSrc(srcList []src, srcCastRow string) *src {
