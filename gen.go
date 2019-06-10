@@ -432,7 +432,6 @@ func params(mappersConfig *config) (interface{}, error) {
 }
 
 func searchUsedField(srcStruct *src, castRow string) *field {
-	fmt.Println()
 	for _, srcField := range srcStruct.Fields {
 		if castRow == fmt.Sprintf("%s.%s", srcStruct.Alias, srcField.Name) {
 			return &srcField
