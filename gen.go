@@ -16,6 +16,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	pathUtil "path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -268,7 +269,7 @@ func params(mappersConfig *config) (interface{}, error) {
 
 		var dst src
 		dst.Alias = mapperConfig.Destination.Alias
-		dstMeta, err := parseStructure(mapperConfig.Destination.Path)
+		dstMeta, err := parseStructure(pathUtil.Dir(mappersConfig.path), mapperConfig.Destination.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -290,7 +291,7 @@ func params(mappersConfig *config) (interface{}, error) {
 
 		var srcList []src
 		for _, mapperSrc := range mapperConfig.Sources {
-			srcMeta, err := parseStructure(mapperSrc.Path)
+			srcMeta, err := parseStructure(pathUtil.Dir(mappersConfig.path), mapperSrc.Path)
 			if err != nil {
 				return nil, err
 			}
@@ -640,7 +641,7 @@ func mapperFilePackage(mapperFilePath string) string {
 	return filepath.Base(filepath.Dir(absPath))
 }
 
-func parseStructure(path string) (*structMeta, error) {
+func parseStructure(dir, path string) (*structMeta, error) {
 	switch path {
 	case "byte", "bool", "string",
 		"uint", "uint8", "uint16", "uint32", "uint64",
@@ -659,7 +660,8 @@ func parseStructure(path string) (*structMeta, error) {
 	if !strings.HasSuffix(filePath, ".go") {
 		filePath = filePath + ".go"
 	}
-	data, err := ioutil.ReadFile(filePath)
+	a := pathUtil.Join(dir, filePath)
+	data, err := ioutil.ReadFile(a)
 	if err != nil {
 		data, err = ioutil.ReadFile(filepath.Join(os.Getenv("GOPATH"), "src", filePath))
 		if err != nil {
