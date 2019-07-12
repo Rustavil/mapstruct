@@ -269,6 +269,9 @@ func params(mappersConfig *config) (interface{}, error) {
 		var dst src
 		dst.Alias = mapperConfig.Destination.Alias
 		dstMeta, err := parseStructure(mapperConfig.Destination.Path)
+		if err != nil {
+			return nil, err
+		}
 		dst.ShortPath = shortPath(dstMeta)
 		if err != nil {
 			return nil, err
