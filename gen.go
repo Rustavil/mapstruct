@@ -410,7 +410,7 @@ func params(mappersConfig *config) (interface{}, error) {
 	for i := range mappersConfig.Imports {
 		importPackages = append(importPackages, importPackage{
 			Alias: mappersConfig.Imports[i].Alias,
-			Path:  mappersConfig.Imports[i].Path,
+			Path:  importsPath(filepath.Dir(mappersConfig.path), mappersConfig.Imports[i].Path),
 		})
 	}
 	return struct {
@@ -433,6 +433,16 @@ func params(mappersConfig *config) (interface{}, error) {
 		TypesCastList:  typesCastList,
 		Mappers:        mappers,
 	}, nil
+}
+
+func importsPath(dir, path string) string {
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(dir, path)
+	}
+	if strings.HasPrefix(path, filepath.Join(os.Getenv("GOPATH"), "src")) {
+		return strings.TrimPrefix(path, filepath.Join(os.Getenv("GOPATH"), "src")+string(os.PathSeparator))
+	}
+	return path
 }
 
 func searchUsedField(srcStruct *src, castRow string) *field {
@@ -660,12 +670,15 @@ func parseStructure(dir, path string) (*structMeta, error) {
 	if !strings.HasSuffix(filePath, ".go") {
 		filePath = filePath + ".go"
 	}
-	a := pathUtil.Join(dir, filePath)
-	data, err := ioutil.ReadFile(a)
+	data, err := ioutil.ReadFile(pathUtil.Join(dir, filePath))
 	if err != nil {
 		data, err = ioutil.ReadFile(filepath.Join(os.Getenv("GOPATH"), "src", filePath))
 		if err != nil {
 			return nil, fmt.Errorf("incorrect file path %s", filePath)
+		}
+	} else {
+		if packagePath, err := filepath.Abs(pathUtil.Join(dir, filePath)); err == nil {
+			filePath = strings.TrimPrefix(packagePath, filepath.Join(os.Getenv("GOPATH"), "src", string(os.PathSeparator)))
 		}
 	}
 	fileAST, err := parser.ParseFile(fileSet, "", data, 0)
