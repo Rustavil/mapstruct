@@ -263,6 +263,9 @@ type importPackage struct {
 }
 
 func params(mappersConfig *config) (interface{}, error) {
+	if !filepath.IsAbs(mappersConfig.path) {
+		mappersConfig.path, _ = filepath.Abs(mappersConfig.path)
+	}
 	packageName := mapperFilePackage(mappersConfig.out)
 	mappers := make([]mappingParams, 0, len(mappersConfig.Mappers)*2)
 	for _, mapperConfig := range mappersConfig.Mappers {
