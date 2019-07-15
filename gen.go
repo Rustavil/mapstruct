@@ -410,7 +410,7 @@ func params(mappersConfig *config) (interface{}, error) {
 	for i := range mappersConfig.Imports {
 		importPackages = append(importPackages, importPackage{
 			Alias: mappersConfig.Imports[i].Alias,
-			Path:  importsPath(filepath.Dir(mappersConfig.path), mappersConfig.Imports[i].Path),
+			Path:  mappersConfig.Imports[i].Path,
 		})
 	}
 	return struct {
@@ -433,16 +433,6 @@ func params(mappersConfig *config) (interface{}, error) {
 		TypesCastList:  typesCastList,
 		Mappers:        mappers,
 	}, nil
-}
-
-func importsPath(dir, path string) string {
-	if !filepath.IsAbs(path) {
-		path = filepath.Join(dir, path)
-	}
-	if strings.HasPrefix(path, filepath.Join(os.Getenv("GOPATH"), "src")) {
-		return strings.TrimPrefix(path, filepath.Join(os.Getenv("GOPATH"), "src")+string(os.PathSeparator))
-	}
-	return path
 }
 
 func searchUsedField(srcStruct *src, castRow string) *field {
